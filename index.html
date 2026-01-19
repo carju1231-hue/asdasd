@@ -81,3 +81,40 @@ eque)
       if (!addMode) return;
       const title = document.getElementById('title').value.trim() || "Nuevo punto";
       const desc = document.getElementById('desc').value.trim() || "";
+
+      const f = {
+        type: "Feature",
+        properties: { title, description: desc },
+        geometry: { type: "Point", coordinates: [e.latlng.lng, e.latlng.lat] }
+      };
+
+      // Actualizar capa
+      const current = poiLayer.toGeoJSON();
+      current.features.push(f);
+      map.removeLayer(poiLayer);
+      poiLayer = L.geoJSON(current, {
+        pointToLayer: (feature, latlng) =>
+          L.marker(latlng).bindPopup(
+            `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
+          )
+      }).addTo(map);
+    });
+
+    // 5) Exportar a GeoJSON
+    function download(filename, text) {
+      const a = document.createElement('a');
+      a.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text));
+      a.setAttribute('download', filename);
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    document.getElementById('export').addEventListener('click', () => {
+      const data = JSON.stringify(poiLayer.toGeoJSON(), null, 2);
+      download('puntos.geojson', data);
+    });
+  </script>
+</body>
+</html>
