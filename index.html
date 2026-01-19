@@ -6,48 +6,59 @@
   <title>Mapa con Puntos de Interés</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Leaflet CSS (sin integrity/crossorigin para evitar bloqueos) -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
- %; margin: 0; }
-    #map { height: 100vh; }          /* ✅ El mapa necesita altura */
+  <!-- Leaflet CSS (sin SRI para evitar bloqueos) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.
+    /* ✅ El mapa necesita altura para mostrarse */
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100vh; }
+
+    /* Caja de controles */
     .controls {
       position: absolute; z-index: 1000; top: 10px; left: 10px;
-      background: white; padding: 8px 10px; border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.15); font-family: system-ui, sans-serif;
+      background: #fff; padding: 8px 10px; border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      width: 240px;
     }
-    .controls input, .controls button { margin: 4px 0; width: 100%; }
+    .controls strong { display: block; margin-bottom: 6px; }
+    .controls input, .controls button {
+      margin: 4px 0; width: 100%; box-sizing: border-box;
+      padding: 6px 8px; font-size: 14px;
+    }
   </style>
 </head>
 <body>
+  <!-- Controles -->
   <div class="controls">
-    <strong>Agregar punto</strong><br/>
+    <strong>Agregar punto</strong>
     <input id="title" placeholder="Título" />
     <input id="desc" placeholder="Descripción" />
     <button id="add-mode">Agregar haciendo clic en el mapa</button>
     <button id="export">Exportar a GeoJSON</button>
   </div>
 
+  <!-- Contenedor del mapa -->
   <div id="map"></div>
 
-  <!-- Leaflet JS (sin integrity/crossorigin) -->
-  <script src="https://unpkg.com/leaflet@1.9.t.js</script>
+  <!-- Leaflet JS (sin SRI para evitar bloqueos) -->
+  <script src="https://unpkg1.9.4/dist/leaflet.js</script>
 
   <script>
-    // Centra en Pimentel (ajusta si quieres)
+    // ====== 1) Inicializar mapa ======
+    // Centrado en Pimentel, Lambayeque (ajusta si quieres)
     const map = L.map('map').setView([-6.836, -79.934], 12);
 
-    // Capa base OSM (URL correcta)
+    // ====== 2) Capa base OpenStreetMap (gratis) ======
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Puntos iniciales (opcional)
+    // ====== 3) Capa de puntos (GeoJSON) ======
     let poiLayer = L.geoJSON({
       type: "FeatureCollection",
       features: [
+        // Punto de ejemplo (puedes borrar esta Feature)
         {
           type: "Feature",
           properties: { title: "Playa de Pimentel", description: "Punto de ejemplo" },
@@ -61,20 +72,26 @@
         )
     }).addTo(map);
 
-    // Modo agregar
+    // ====== 4) Modo agregar punto con clic ======
     let addMode = false;
-    document.getElementById('add-mode').addEventListener('click', () => {
+    const addBtn = document.getElementById('add-mode');
+
+    addBtn.addEventListener('click', () => {
       addMode = !addMode;
-      document.getElementById('add-mode').textContent = addMode
+      addBtn.textContent = addMode
         ? "Salir de modo agregar"
         : "Agregar haciendo clic en el mapa";
+      // Cambia el cursor del mapa para dar feedback
+      map._container.style.cursor = addMode ? 'crosshair' : '';
     });
 
     map.on('click', (e) => {
       if (!addMode) return;
-      const title = document.getElementById('title').value.trim() || "Nuevo punto";
-      const desc = document.getElementById('desc').value.trim() || "";
 
+      const title = (document.getElementById('title').value || "").trim() || "Nuevo punto";
+      const desc  = (document.getElementById('desc').value  || "").trim();
+
+      // Actualizar GeoJSON en memoria
       const current = poiLayer.toGeoJSON();
       current.features.push({
         type: "Feature",
@@ -82,6 +99,7 @@
         geometry: { type: "Point", coordinates: [e.latlng.lng, e.latlng.lat] }
       });
 
+      // Recrear la capa con el nuevo Feature
       map.removeLayer(poiLayer);
       poiLayer = L.geoJSON(current, {
         pointToLayer: (feature, latlng) =>
@@ -91,7 +109,7 @@
       }).addTo(map);
     });
 
-    // Exportar
+    // ====== 5) Exportar a GeoJSON ======
     document.getElementById('export').addEventListener('click', () => {
       const data = JSON.stringify(poiLayer.toGeoJSON(), null, 2);
       const a = document.createElement('a');
