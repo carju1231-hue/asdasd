@@ -3,118 +3,34 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Mapa con Puntos de Interés</title>
+  <title>Prueba de mapa Leaflet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- ✅ Leaflet CSS (necesario para que el mapa se vea) -->
+  <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
- 0vh; }
-
-    .controls {
-      position: absolute; z-index: 1000; top: 10px; left: 10px;
-      background: white; padding: 8px 10px; border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.15); font-family: system-ui, sans-serif;
-    }
-    .controls input, .controls button { margin: 4px 0; width: 100%; }
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRarse */
+    #map { height: 100vh; }
   </style>
 </head>
 <body>
-  <div class="controls">
-    <strong>Agregar punto</strong><br/>
-    <input id="title" placeholder="Título" />
-    <input id="desc" placeholder="Descripción" />
-    <button id="add-mode">Agregar haciendo clic en el mapa</button>
-    <button id="export">Exportar a GeoJSON</button>
-  </div>
-
-  <!-- ✅ Contenedor del mapa -->
   <div id="map"></div>
 
-  <!-- ✅ Leaflet JS -->
+  <!-- Leaflet JS -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-eque)
-    const map = L.map('map').setView([-6.836, -79.934], 12);
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZ.map('map').setView([-6.836, -79.934], 12);
 
-    // 2) Capa base (OpenStreetMap - gratis)
+    // Capa base OSM
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.open.org/copyrightOSM</a> contributors'
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // 3) Ejemplo: un punto inicial (puedes borrar si no lo quieres)
-    const initialFeatures = [
-      {
-        type: "Feature",
-        properties: { title: "Playa de Pimentel", description: "Punto de ejemplo" },
-        geometry: { type: "Point", coordinates: [-79.934, -6.836] } // [lng, lat]
-      }
-    ];
-
-    // Capa de puntos (GeoJSON)
-    let poiLayer = L.geoJSON({
-      type: "FeatureCollection",
-      features: initialFeatures
-    }, {
-      pointToLayer: (feature, latlng) => {
-        return L.marker(latlng).bindPopup(
-          `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
-        );
-      }
-    }).addTo(map);
-
-    // 4) Modo agregar punto con clic
-    let addMode = false;
-    document.getElementById('add-mode').addEventListener('click', () => {
-      addMode = !addMode;
-      document.getElementById('add-mode').textContent = addMode
-        ? "Salir de modo agregar"
-        : "Agregar haciendo clic en el mapa";
-    });
-
-    map.on('click', (e) => {
-      if (!addMode) return;
-      const title = document.getElementById('title').value.trim() || "Nuevo punto";
-      const desc = document.getElementById('desc').value.trim() || "";
-
-      const f = {
-        type: "Feature",
-        properties: { title, description: desc },
-        geometry: { type: "Point", coordinates: [e.latlng.lng, e.latlng.lat] }
-      };
-
-      // Actualizar capa
-      const current = poiLayer.toGeoJSON();
-      current.features.push(f);
-      map.removeLayer(poiLayer);
-      poiLayer = L.geoJSON(current, {
-        pointToLayer: (feature, latlng) =>
-          L.marker(latlng).bindPopup(
-            `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
-          )
-      }).addTo(map);
-    });
-
-    // 5) Exportar a GeoJSON
-    function download(filename, text) {
-      const a = document.createElement('a');
-      a.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text));
-      a.setAttribute('download', filename);
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-
-    document.getElementById('export').addEventListener('click', () => {
-      const data = JSON.stringify(poiLayer.toGeoJSON(), null, 2);
-      download('puntos.geojson', data);
-    });
+    // Marcador de prueba
+    L.marker([-6.836, -79.934]).addTo(map).bindPopup('Hola, Pimentel 👋');
   </script>
 </body>
 </html>
+``
