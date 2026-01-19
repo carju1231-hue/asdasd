@@ -3,34 +3,102 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Prueba de mapa Leaflet</title>
+  <title>Mapa con Puntos de Interés</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Leaflet CSS -->
+  <!-- Leaflet CSS (sin integrity/crossorigin para evitar bloqueos) -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRarse */
-    #map { height: 100vh; }
+ %; margin: 0; }
+    #map { height: 100vh; }          /* ✅ El mapa necesita altura */
+    .controls {
+      position: absolute; z-index: 1000; top: 10px; left: 10px;
+      background: white; padding: 8px 10px; border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); font-family: system-ui, sans-serif;
+    }
+    .controls input, .controls button { margin: 4px 0; width: 100%; }
   </style>
 </head>
 <body>
+  <div class="controls">
+    <strong>Agregar punto</strong><br/>
+    <input id="title" placeholder="Título" />
+    <input id="desc" placeholder="Descripción" />
+    <button id="add-mode">Agregar haciendo clic en el mapa</button>
+    <button id="export">Exportar a GeoJSON</button>
+  </div>
+
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZ.map('map').setView([-6.836, -79.934], 12);
+  <!-- Leaflet JS (sin integrity/crossorigin) -->
+  <script src="https://unpkg.com/leaflet@1.9.t.js</script>
 
-    // Capa base OSM
+  <script>
+    // Centra en Pimentel (ajusta si quieres)
+    const map = L.map('map').setView([-6.836, -79.934], 12);
+
+    // Capa base OSM (URL correcta)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Marcador de prueba
-    L.marker([-6.836, -79.934]).addTo(map).bindPopup('Hola, Pimentel 👋');
+    // Puntos iniciales (opcional)
+    let poiLayer = L.geoJSON({
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { title: "Playa de Pimentel", description: "Punto de ejemplo" },
+          geometry: { type: "Point", coordinates: [-79.934, -6.836] }
+        }
+      ]
+    }, {
+      pointToLayer: (feature, latlng) =>
+        L.marker(latlng).bindPopup(
+          `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
+        )
+    }).addTo(map);
+
+    // Modo agregar
+    let addMode = false;
+    document.getElementById('add-mode').addEventListener('click', () => {
+      addMode = !addMode;
+      document.getElementById('add-mode').textContent = addMode
+        ? "Salir de modo agregar"
+        : "Agregar haciendo clic en el mapa";
+    });
+
+    map.on('click', (e) => {
+      if (!addMode) return;
+      const title = document.getElementById('title').value.trim() || "Nuevo punto";
+      const desc = document.getElementById('desc').value.trim() || "";
+
+      const current = poiLayer.toGeoJSON();
+      current.features.push({
+        type: "Feature",
+        properties: { title, description: desc },
+        geometry: { type: "Point", coordinates: [e.latlng.lng, e.latlng.lat] }
+      });
+
+      map.removeLayer(poiLayer);
+      poiLayer = L.geoJSON(current, {
+        pointToLayer: (feature, latlng) =>
+          L.marker(latlng).bindPopup(
+            `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
+          )
+      }).addTo(map);
+    });
+
+    // Exportar
+    document.getElementById('export').addEventListener('click', () => {
+      const data = JSON.stringify(poiLayer.toGeoJSON(), null, 2);
+      const a = document.createElement('a');
+      a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
+      a.download = 'puntos.geojson';
+      a.click();
+    });
   </script>
 </body>
 </html>
-``
