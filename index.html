@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Mapa con Puntos de Interés</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Estilos de Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIINight: 100vh; }
+    .controls {
+      position: absolute; z-index: 1000; top: 10px; left: 10px;
+      background: white; padding: 8px 10px; border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); font-family: system-ui, sans-serif;
+    }
+    .controls input, .controls button { margin: 4px 0; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <strong>Agregar punto</strong><br/>
+    <input id="title" placeholder="Título" />
+    <input id="desc" placeholder="Descripción" />
+    <button id="add-mode">Agregar haciendo clic en el mapa</button>
+    <button id="export">Exportar a GeoJSON</button>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Script de Leaflet -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJonst map = L.map('map').setView([40.4168, -3.7038], 5); // Centro inicial (Madrid). Cambia según tu región.
+
+    // 2) Capa base (OpenStreetMap - gratis)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; https://www.openstreetmap.org/copyrightOSM</a> contributors'
+    }).addTo(map);
+
+    // 3) Capa de puntos desde un GeoJSON local (puedes empezar con algunos por defecto)
+    const initialFeatures = [
+      {
+        type: "Feature",
+        properties: { title: "Punto de ejemplo", description: "Mi primer POI" },
+        geometry: { type: "Point", coordinates: [-3.7038, 40.4168] } // [lng, lat]
+      }
+    ];
+
+    const poiLayer = L.geoJSON({
+      type: "FeatureCollection",
+      features: initialFeatures
+    }, {
+      pointToLayer: (feature, latlng) => {
+        return L.marker(latlng).bindPopup(
+          `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
+        );
+      }
+    }).addTo(map);
+
+    // 4) Modo agregar punto con clic
+    let addMode = false;
+    document.getElementById('add-mode').addEventListener('click', () => {
+      addMode = !addMode;
+      document.getElementById('add-mode').textContent = addMode
+        ? "Salir de modo agregar"
+        : "Agregar haciendo clic en el mapa";
+    });
+
+    map.on('click', (e) => {
+      if (!addMode) return;
+      const title = document.getElementById('title').value.trim() || "Nuevo punto";
+      const desc = document.getElementById('desc').value.trim() || "";
+
+      const marker = L.marker(e.latlng).addTo(poiLayer);
+      marker.bindPopup(`<strong>${title}</strong><br/>${desc}`).openPopup();
+
+      // Añadir al GeoJSON en memoria
+      const f = {
+        type: "Feature",
+        properties: { title, description: desc },
+        geometry: { type: "Point", coordinates: [e.latlng.lng, e.latlng.lat] }
+      };
+      // Obtener el GeoJSON actual del layer y sumar
+      const current = poiLayer.toGeoJSON();
+      current.features.push(f);
+
+      // Reiniciar capa (simple y efectivo para ejemplos)
+      poiLayer.clearLayers();
+      L.geoJSON(current, {
+        pointToLayer: (feature, latlng) =>
+          L.marker(latlng).bindPopup(
+            `<strong>${feature.properties.title || "Sin título"}</strong><br/>${feature.properties.description || ""}`
+          )
+      }).addTo(map);
+    });
+
+    // 5) Exportar a GeoJSON (descarga un archivo .geojson)
+    function download(filename, text) {
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+
+    document.getElementById('export').addEventListener('click', () => {
+      const data = JSON.stringify(poiLayer.toGeoJSON(), null, 2);
+      download('puntos.geojson', data);
+    });
+  </script>
+</body>
+</html>
